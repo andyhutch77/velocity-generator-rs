@@ -21,7 +21,7 @@ tools:
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  staged: true
+  # staged: true
   add-comment:
     max: 1
     # Each new version of the plan hides the previous one.

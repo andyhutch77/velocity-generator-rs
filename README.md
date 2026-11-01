@@ -78,6 +78,11 @@ stateDiagram-v2
 | `in-progress` | Agent PR open | Implementer agent |
 | `blocked` | Agent needs an answer | Any agent |
 
+The planner runs only when a maintainer adds the `needs-plan` label. To request a
+revised plan, leave feedback in a comment, then remove and re-add `needs-plan`;
+commenting by itself does not trigger the planner. The planner removes
+`needs-plan` after posting a plan, so each run requires adding it again.
+
 ### Agents and orchestration
 
 When a plan is approved, the orchestrator splits it into tasks and hands each one to a specialist agent on its own branch, so their changes don't collide. The architect agent reviews plans and PRs against `ARCHITECTURE.md` but never writes code.

@@ -1,0 +1,9 @@
+[package]
+name = "velocity-core"
+version = "0.1.0"
+description = "Velocity calculation logic, with no UI or browser dependencies."
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

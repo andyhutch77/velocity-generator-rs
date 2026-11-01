@@ -1,0 +1,14 @@
+[package]
+name = "velocity-app"
+version = "0.1.0"
+description = "Browser UI for Velocity Calculator, built with Leptos."
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+velocity-core = { path = "../velocity-core" }
+leptos = { version = "0.8", features = ["csr"] }
+console_error_panic_hook = "0.1"
+
+[lints]
+workspace = true

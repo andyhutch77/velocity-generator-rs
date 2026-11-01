@@ -5,6 +5,10 @@
 all-features = true
 
 [advisories]
+# Fail on everything except the exceptions below, each with a reason.
+ignore = [
+    { id = "RUSTSEC-2024-0436", reason = "paste is unmaintained, not vulnerable; pulled in transitively by Leptos. Remove once Leptos drops it." },
+]
 # Any RustSec advisory against a dependency fails the check.
 ignore = []
 

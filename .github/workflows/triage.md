@@ -20,7 +20,7 @@ tools:
 safe-outputs:
   # Staged: show what the agent WOULD do in the run summary, without doing it.
   # Remove once you trust its output.
-  staged: true
+  # staged: true
   add-comment:
     max: 1
     hide-older-comments: true

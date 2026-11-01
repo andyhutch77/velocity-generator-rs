@@ -1,0 +1,39 @@
+/* Minimal placeholder. The Windows 98 component library replaces this. */
+:root {
+  --desktop: #008080;
+  --surface: #c0c0c0;
+  --title-bar: #000080;
+  --title-text: #ffffff;
+  --text: #000000;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--desktop);
+  font-family: system-ui, sans-serif;
+  color: var(--text);
+}
+
+.window {
+  background: var(--surface);
+  min-width: min(320px, 90vw);
+  border: 2px outset var(--surface);
+}
+
+.title-bar {
+  background: var(--title-bar);
+  color: var(--title-text);
+  padding: 4px 8px;
+}
+
+.title-bar h1 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.window-body {
+  padding: 16px;
+}

@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["crates/velocity-core", "crates/velocity-app"]
+
+[workspace.package]
+edition = "2021"
+publish = false
+
+# Rules every crate inherits (each crate opts in with `[lints] workspace = true`).
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1

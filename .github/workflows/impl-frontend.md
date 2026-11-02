@@ -33,12 +33,13 @@ steps:
   - name: Start dev server
     working-directory: crates/velocity-app
     run: |
-      nohup trunk serve --address 0.0.0.0 --port 5173 > /tmp/trunk.log 2>&1 &
+      mkdir -p /tmp/gh-aw/agent
+      nohup trunk serve --address 0.0.0.0 --port 5173 > /tmp/gh-aw/agent/trunk.log 2>&1 &
       for i in $(seq 1 60); do
         curl -sf http://localhost:5173 > /dev/null && exit 0
         sleep 5
       done
-      echo "Dev server didn't start:"; cat /tmp/trunk.log; exit 1
+      echo "Dev server didn't start:"; cat /tmp/gh-aw/agent/trunk.log; exit 1
 
 tools:
   github:
@@ -52,7 +53,7 @@ tools:
     - "cargo build:*"
     - "cargo check:*"
     - "trunk build:*"
-    - "cat /tmp/trunk.log"
+    - "cat /tmp/gh-aw/agent/trunk.log"
     - "git status"
     - "git diff:*"
   # Playwright MCP server: a real browser. What it can reach is limited by
@@ -63,15 +64,15 @@ network:
   allowed:
     - defaults
     - rust
-    # The "localhost" keyword turns on host access for common dev ports
-    # (including 5173), so the sandboxed browser can reach the dev server via
-    # host.docker.internal. Naming host.docker.internal on its own only opens
-    # ports 80 and 443, which is why the firewall returned 403 on 4173.
-    - localhost
+    # "local" turns on host access for common dev ports (including 5173), so the
+    # sandboxed browser can reach the dev server via host.docker.internal.
+    # Naming host.docker.internal on its own only opens ports 80 and 443,
+    # which is why the firewall returned 403 on 4173.
+    - local
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  # staged: true
+  staged: true
   create-pull-request:
     title-prefix: "[agent] "
     labels: [agent, frontend]
@@ -139,7 +140,7 @@ The browser runs in its own container, so always use `host.docker.internal`, nev
 `localhost`. Use the Playwright browser tools for these checks, not shell
 commands like `curl`, which aren't permitted. Never try to start or restart the
 dev server yourself. If the page fails
-to load, read `/tmp/trunk.log` for the build error.
+to load, read `/tmp/gh-aw/agent/trunk.log` for the build error.
 
 Using the Playwright browser tools:
 

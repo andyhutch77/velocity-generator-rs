@@ -9,6 +9,11 @@
       "repo": "github/gh-aw-actions/setup",
       "version": "v1.0.1",
       "sha": "221ba4f4319de6b8e809d1a15528b3ae6a818aa5"
+    },
+    "taiki-e/install-action@v2": {
+      "repo": "taiki-e/install-action",
+      "version": "v2",
+      "sha": "1919c4a95903d2c33e4a221102edca87309fc14b"
     }
   }
 }

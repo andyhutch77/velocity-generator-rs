@@ -19,7 +19,9 @@ engine: copilot
 
 # Before the agent starts: install the Rust toolchain and Trunk, then start
 # `trunk serve` in the background. It rebuilds automatically whenever the
-# agent edits a file, so the agent can check its work at http://localhost:4173. (Not 8080: the MCP gateway uses that port.)
+# agent edits a file. It listens on all interfaces (0.0.0.0) so the Playwright
+# browser, which runs in its own container, can reach it via host.docker.internal.
+# Port 4173, not 8080: the MCP gateway uses 8080.
 steps:
   - name: Install Rust toolchain
     run: rustup show
@@ -30,7 +32,7 @@ steps:
   - name: Start dev server
     working-directory: crates/velocity-app
     run: |
-      nohup trunk serve --port 4173 > /tmp/trunk.log 2>&1 &
+      nohup trunk serve --address 0.0.0.0 --port 4173 > /tmp/trunk.log 2>&1 &
       for i in $(seq 1 60); do
         curl -sf http://localhost:4173 > /dev/null && exit 0
         sleep 5
@@ -60,10 +62,12 @@ network:
   allowed:
     - defaults
     - rust
+    # How the Playwright browser container reaches the dev server on the runner.
+    - host.docker.internal
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  # staged: true
+  staged: true
   create-pull-request:
     title-prefix: "[agent] "
     labels: [agent, frontend]
@@ -126,7 +130,9 @@ or styles from the original React version, and no third-party theme CSS.
 
 ## Check your work in the browser
 
-The app is running at `http://localhost:4173` and rebuilds when you save. If it fails
+The app is running at `http://host.docker.internal:4173` and rebuilds when you save.
+The browser runs in its own container, so always use `host.docker.internal`, never
+`localhost`. Never try to start or restart the dev server yourself. If the page fails
 to load, read `/tmp/trunk.log` for the build error.
 
 Using the Playwright browser tools:

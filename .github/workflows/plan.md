@@ -105,3 +105,5 @@ Then add the `plan-review` label and remove `needs-plan` (and `blocked`, if pres
 - Every task should be testable. Every success criterion should be checkable.
 - Never plan changes to anything under `.github/`. Those are made by humans only.
 - Write in plain English with British spelling.
+- Only plan documentation in places `ARCHITECTURE.md` names: decision notes go in
+  `docs/adr/`. Don't invent new folders.

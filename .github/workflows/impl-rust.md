@@ -29,6 +29,7 @@ tools:
     toolsets: [issues, repos, pull_requests]
   edit:
   bash:
+    - "mkdir:*"
     - "cargo fmt:*"
     - "cargo clippy:*"
     - "cargo test:*"

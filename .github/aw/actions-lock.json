@@ -1,5 +1,10 @@
 {
   "entries": {
+    "Swatinem/rust-cache@v2": {
+      "repo": "Swatinem/rust-cache",
+      "version": "v2",
+      "sha": "d1527c8f67ef9af357290475d4af4b0fab8f12e0"
+    },
     "github/gh-aw-actions/setup@v1.0.1": {
       "repo": "github/gh-aw-actions/setup",
       "version": "v1.0.1",

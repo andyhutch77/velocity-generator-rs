@@ -19,7 +19,7 @@ engine: copilot
 
 # Before the agent starts: install the Rust toolchain and Trunk, then start
 # `trunk serve` in the background. It rebuilds automatically whenever the
-# agent edits a file, so the agent can check its work at http://localhost:8080.
+# agent edits a file, so the agent can check its work at http://localhost:4173. (Not 8080: the MCP gateway uses that port.)
 steps:
   - name: Install Rust toolchain
     run: rustup show
@@ -30,9 +30,9 @@ steps:
   - name: Start dev server
     working-directory: crates/velocity-app
     run: |
-      nohup trunk serve --port 8080 > /tmp/trunk.log 2>&1 &
+      nohup trunk serve --port 4173 > /tmp/trunk.log 2>&1 &
       for i in $(seq 1 60); do
-        curl -sf http://localhost:8080 > /dev/null && exit 0
+        curl -sf http://localhost:4173 > /dev/null && exit 0
         sleep 5
       done
       echo "Dev server didn't start:"; cat /tmp/trunk.log; exit 1
@@ -126,7 +126,7 @@ or styles from the original React version, and no third-party theme CSS.
 
 ## Check your work in the browser
 
-The app is running at `http://localhost:8080` and rebuilds when you save. If it fails
+The app is running at `http://localhost:4173` and rebuilds when you save. If it fails
 to load, read `/tmp/trunk.log` for the build error.
 
 Using the Playwright browser tools:

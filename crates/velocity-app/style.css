@@ -1,39 +1,134 @@
-/* Minimal placeholder. The Windows 98 component library replaces this. */
 :root {
-  --desktop: #008080;
-  --surface: #c0c0c0;
-  --title-bar: #000080;
-  --title-text: #ffffff;
-  --text: #000000;
+  /* Colours */
+  --color-desktop: #008080;
+  --color-surface: #c0c0c0;
+  --color-title-bar: #000080;
+  --color-title-text: #ffffff;
+  --color-text: #000000;
+  --color-field: #ffffff;
+  --color-disabled-text: #595959;
+  --color-focus: #000000;
+  --color-bevel-light: #ffffff;
+  --color-bevel-mid: #dfdfdf;
+  --color-bevel-dark: #808080;
+  --color-bevel-darkest: #000000;
+
+  /* Bevel borders: light on top/left, dark on bottom/right */
+  --bevel-raised: inset -1px -1px var(--color-bevel-darkest),
+    inset 1px 1px var(--color-bevel-light), inset -2px -2px var(--color-bevel-dark),
+    inset 2px 2px var(--color-bevel-mid);
+  --bevel-sunken: inset -1px -1px var(--color-bevel-light),
+    inset 1px 1px var(--color-bevel-dark), inset -2px -2px var(--color-bevel-mid),
+    inset 2px 2px var(--color-bevel-darkest);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+
+  /* Fonts */
+  --font-ui: "MS Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+  --font-size-ui: 1rem;
+
+  /* Sizes */
+  --window-width: 360px;
+  --focus-outline: 2px dotted var(--color-focus);
+  --focus-offset: 2px;
 }
 
 body {
   margin: 0;
+  background: var(--color-desktop);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-ui);
+}
+
+.win98-desktop {
+  box-sizing: border-box;
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: var(--desktop);
-  font-family: system-ui, sans-serif;
-  color: var(--text);
+  padding: var(--space-2);
 }
 
-.window {
-  background: var(--surface);
-  min-width: min(320px, 90vw);
-  border: 2px outset var(--surface);
+.win98-window {
+  box-sizing: border-box;
+  width: min(var(--window-width), 100%);
+  background: var(--color-surface);
+  box-shadow: var(--bevel-raised);
+  padding: var(--space-1);
 }
 
-.title-bar {
-  background: var(--title-bar);
-  color: var(--title-text);
-  padding: 4px 8px;
+.win98-title-bar {
+  background: var(--color-title-bar);
+  color: var(--color-title-text);
+  padding: var(--space-1) var(--space-2);
 }
 
-.title-bar h1 {
+.win98-title-bar__text {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--font-size-ui);
+  font-weight: bold;
 }
 
-.window-body {
-  padding: 16px;
+.win98-window__body {
+  padding: var(--space-3);
+}
+
+.win98-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-block-end: var(--space-3);
+}
+
+.win98-label {
+  color: var(--color-text);
+}
+
+.win98-text-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: var(--color-field);
+  color: var(--color-text);
+  font: inherit;
+  box-shadow: var(--bevel-sunken);
+}
+
+.win98-text-input:disabled {
+  background: var(--color-surface);
+  color: var(--color-disabled-text);
+}
+
+.win98-button {
+  min-width: 6rem;
+  min-height: 2.75rem;
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  box-shadow: var(--bevel-raised);
+  cursor: pointer;
+}
+
+.win98-button:active:not(:disabled) {
+  box-shadow: var(--bevel-sunken);
+  padding: calc(var(--space-1) + 1px) calc(var(--space-3) - 1px) calc(var(--space-1) - 1px)
+    calc(var(--space-3) + 1px);
+}
+
+.win98-button:disabled {
+  color: var(--color-disabled-text);
+  text-shadow: 1px 1px var(--color-bevel-light);
+  cursor: not-allowed;
+}
+
+.win98-button:focus-visible,
+.win98-text-input:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
 }

@@ -1,3 +1,6 @@
+mod components;
+
+use components::win98::{Button, Label, TextInput, Window};
 use leptos::prelude::*;
 
 fn main() {
@@ -5,20 +8,20 @@ fn main() {
     leptos::mount::mount_to_body(App);
 }
 
-/// Placeholder shell: one empty Windows 98-style window.
-/// The real UI and component library are built by the agents.
+/// Placeholder page built from the Windows 98 component library.
+/// The real calculator UI is separate work.
 #[component]
 fn App() -> impl IntoView {
+    let name = RwSignal::new(String::new());
     view! {
-        <main>
-            <section class="window" aria-labelledby="window-title">
-                <header class="title-bar">
-                    <h1 id="window-title">"Velocity Calculator"</h1>
-                </header>
-                <div class="window-body">
-                    <p>"Coming soon."</p>
+        <main class="win98-desktop">
+            <Window id="velocity-window" title="Velocity Calculator">
+                <div class="win98-field">
+                    <Label for_id="demo-input">"Sprint name"</Label>
+                    <TextInput id="demo-input" value=name />
                 </div>
-            </section>
+                <Button>"OK"</Button>
+            </Window>
         </main>
     }
 }

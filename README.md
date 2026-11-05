@@ -1,3 +1,12 @@
+[![CI](https://github.com/andyhutch77/velocity-generator-rs/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/andyhutch77/velocity-generator-rs/actions/workflows/ci.yml)
+[![Deploy](https://github.com/andyhutch77/velocity-generator-rs/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/andyhutch77/velocity-generator-rs/actions/workflows/deploy.yml)
+[![CodeQL](https://github.com/andyhutch77/velocity-generator-rs/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/andyhutch77/velocity-generator-rs/security/code-scanning)
+[![Live app](https://img.shields.io/badge/live-GitHub%20Pages-2ea44f?logo=github)](https://andyhutch77.github.io/velocity-generator-rs/)
+
+[![Rust](https://img.shields.io/badge/Rust-WebAssembly-dea584?logo=rust)](https://www.rust-lang.org/)
+[![Leptos](https://img.shields.io/badge/UI-Leptos-ef3939)](https://leptos.dev/)
+[![Built with GitHub Agentic Workflows](https://img.shields.io/badge/built%20with-GitHub%20Agentic%20Workflows-6f42c1?logo=githubactions&logoColor=white)](https://github.github.com/gh-aw/)
+
 # Velocity Calculator (Rust)
 
 A Rust rebuild of [Velocity Calculator](https://github.com/andyhutch77/velocity-calculator), compiled to WebAssembly and running entirely in the browser, hosted on GitHub Pages.

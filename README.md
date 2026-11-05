@@ -4,7 +4,7 @@
 [![Live app](https://img.shields.io/badge/live-GitHub%20Pages-2ea44f?logo=github)](https://andyhutch77.github.io/velocity-generator-rs/)
 
 [![Rust](https://img.shields.io/badge/Rust-WebAssembly-dea584?logo=rust)](https://www.rust-lang.org/)
-[![Leptos](https://img.shields.io/badge/UI-Leptos-ef3939)](https://leptos.dev/)
+[![Leptos](https://img.shields.io/static/v1?label=UI&message=Leptos&color=ef3939&logo=webassembly&logoColor=white)](https://leptos.dev/)
 [![Built with GitHub Agentic Workflows](https://img.shields.io/badge/built%20with-GitHub%20Agentic%20Workflows-6f42c1?logo=githubactions&logoColor=white)](https://github.github.com/gh-aw/)
 
 # Velocity Calculator (Rust)

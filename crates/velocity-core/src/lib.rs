@@ -38,6 +38,19 @@ impl SprintVelocities {
     pub fn average(&self) -> f64 {
         round_two_decimals((self.sprint1 + self.sprint2 + self.sprint3) / 3.0)
     }
+
+    /// Average of the three sprints, rounded to two decimals, after checking each value.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`VelocityError::InvalidValue`] naming the first sprint whose
+    /// value is NaN, infinite or negative.
+    pub fn checked_average(&self) -> Result<f64, VelocityError> {
+        check_value("sprint1", self.sprint1)?;
+        check_value("sprint2", self.sprint2)?;
+        check_value("sprint3", self.sprint3)?;
+        Ok(self.average())
+    }
 }
 
 impl Default for SprintVelocities {
@@ -236,6 +249,48 @@ mod tests {
     #[test]
     fn average_rounds_up_to_two_decimals() {
         assert_close(sprints(10.0, 11.0, 11.0).average(), 10.67);
+    }
+
+    #[test]
+    fn average_of_non_default_values() {
+        assert_close(sprints(10.0, 11.0, 12.0).average(), 11.0);
+    }
+
+    #[test]
+    fn average_of_zeros_is_zero() {
+        assert_close(sprints(0.0, 0.0, 0.0).average(), 0.0);
+    }
+
+    #[test]
+    fn average_rounds_half_up() {
+        // The average is exactly 0.125, a half that rounds up.
+        assert_close(sprints(0.0, 0.0, 0.375).average(), 0.13);
+    }
+
+    #[test]
+    fn checked_average_matches_average() {
+        let s = sprints(10.0, 10.0, 11.0);
+        assert_eq!(s.checked_average(), Ok(s.average()));
+    }
+
+    #[test]
+    fn checked_average_rejects_negative() {
+        assert_eq!(
+            sprints(10.0, -1.0, 10.0).checked_average(),
+            Err(VelocityError::InvalidValue("sprint2"))
+        );
+    }
+
+    #[test]
+    fn checked_average_rejects_nan_and_infinite() {
+        assert_eq!(
+            sprints(f64::NAN, 1.0, 1.0).checked_average(),
+            Err(VelocityError::InvalidValue("sprint1"))
+        );
+        assert_eq!(
+            sprints(1.0, 1.0, f64::INFINITY).checked_average(),
+            Err(VelocityError::InvalidValue("sprint3"))
+        );
     }
 
     #[test]

@@ -20,6 +20,13 @@ on:
 concurrency:
   job-discriminator: ${{ inputs.issue_number }}
 
+# These agents always start from main and open a new PR, so they never need
+# gh-aw's automatic "check out the PR" step. Without this, a dispatch from an
+# orchestrator run started by a merged PR tries to check out that (already
+# merged) PR and fails.
+checkout:
+  pull-request: false
+
 # The agent can read and edit files in its own workspace, but can't push,
 # open PRs or touch issues itself. Those go through the safe outputs below.
 permissions:

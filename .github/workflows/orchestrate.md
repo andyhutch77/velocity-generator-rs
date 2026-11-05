@@ -94,8 +94,15 @@ Count the plan's `[rust]` and `[frontend]` tasks, then follow the first rule tha
 2. An agent PR for this issue is **already open**: don't dispatch anything, so you don't
    create duplicate work. Post a progress comment linking the open PR and saying it
    needs to be merged or closed first.
-3. The plan has `[rust]` tasks: dispatch `impl-rust`.
-4. Otherwise, it only has `[frontend]` tasks: dispatch `impl-frontend`.
+3. The plan has `[rust]` tasks and no **merged** Rust PR for this issue: dispatch
+   `impl-rust`.
+4. The plan has `[frontend]` tasks and no **merged** front-end PR for this issue:
+   dispatch `impl-frontend`. This also resumes an issue whose Rust stage is already
+   merged.
+5. Otherwise, every stage is already merged: dispatch nothing, and post a final
+   progress comment.
+
+A Rust PR is one with the `rust` label; a front-end PR has the `frontend` label.
 
 **Started by a merged PR:**
 

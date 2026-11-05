@@ -1,0 +1,75 @@
+name: Deploy
+
+# Every merge to main builds the app, attests the build, and waits for a
+# human to approve the deploy to GitHub Pages (the github-pages environment).
+on:
+  push:
+    branches: [main]
+  # Lets you re-run a deploy by hand from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time. A newer merge waits rather than cancelling a deploy
+# that's already in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build and attest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed to sign the build attestation.
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+
+      # Pages serves the site from /<repo-name>/, not the root, so the build
+      # needs that path or the page loads its files from the wrong place.
+      - name: trunk build --release
+        working-directory: crates/velocity-app
+        run: trunk build --release --public-url "/${{ github.event.repository.name }}/"
+
+      # Signed record of exactly which commit and workflow produced these files.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: crates/velocity-app/dist/*
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: crates/velocity-app/dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    # The environment's required reviewer (you) must approve before this runs.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

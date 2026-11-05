@@ -1,12 +1,24 @@
 ---
 description: Implement the [rust] tasks from an approved plan and open a draft pull request.
 
+run-name: "Rust agent: issue #${{ github.event.inputs.issue_number }}"
+
 on:
-  # Only a human can add plan-approved, so code is only ever written
-  # for plans you've approved.
-  issues:
-    types: [labeled]
-    names: [plan-approved]
+  # Started only by the orchestrator, which passes the issue number.
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue whose approved plan to implement
+        required: true
+        type: string
+  # Dispatched runs are started by the github-actions bot, so allow it
+  # through gh-aw's permission check.
+  bots: [github-actions]
+
+# Give each issue its own concurrency slot, so dispatches for different issues
+# don't cancel each other.
+concurrency:
+  job-discriminator: ${{ inputs.issue_number }}
 
 # The agent can read and edit files in its own workspace, but can't push,
 # open PRs or touch issues itself. Those go through the safe outputs below.
@@ -52,8 +64,11 @@ safe-outputs:
     labels: [agent, rust]
     draft: true
   add-comment:
+    # Dispatched runs have no triggering issue, so the issue is passed explicitly.
+    target: "*"
     max: 1
   add-labels:
+    target: "*"
     allowed: [in-progress, blocked]
     max: 1
 ---
@@ -63,7 +78,8 @@ safe-outputs:
 You are the Rust agent for **Velocity Calculator**. Read `README.md` and
 `ARCHITECTURE.md` before you start, and follow `ARCHITECTURE.md` exactly.
 
-Issue #${{ github.event.issue.number }} has just been approved for implementation.
+The orchestrator has asked you to implement issue #${{ github.event.inputs.issue_number }}.
+When you comment on or label the issue, pass this number as `item_number`.
 
 ## Find the approved plan
 
@@ -104,7 +120,9 @@ Never change anything under `.github/`.
 
 Open one draft pull request. Its description must include:
 
-- `Closes #${{ github.event.issue.number }}` on the first line;
+- on the first line, `Part of #${{ github.event.inputs.issue_number }}` if the plan also has
+  `[frontend]` tasks (the front-end agent runs after your PR is merged and closes the
+  issue), otherwise `Closes #${{ github.event.inputs.issue_number }}`;
 - each `[rust]` task from the plan, ticked if done;
 - each success criterion from the plan, and how the change meets it;
 - the tests added or changed;

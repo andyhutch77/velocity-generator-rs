@@ -1,13 +1,24 @@
 ---
 description: Implement the [frontend] tasks from an approved plan, check them in a real browser, and open a draft pull request.
 
+run-name: "Front-end agent: issue #${{ github.event.inputs.issue_number }}"
+
 on:
-  # Same gate as the Rust agent: only a human can add plan-approved.
-  # Until the orchestrator exists, both agents run on every approved plan
-  # and each does only its own tagged tasks.
-  issues:
-    types: [labeled]
-    names: [plan-approved]
+  # Started only by the orchestrator, which passes the issue number.
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Issue whose approved plan to implement
+        required: true
+        type: string
+  # Dispatched runs are started by the github-actions bot, so allow it
+  # through gh-aw's permission check.
+  bots: [github-actions]
+
+# Give each issue its own concurrency slot, so dispatches for different issues
+# don't cancel each other.
+concurrency:
+  job-discriminator: ${{ inputs.issue_number }}
 
 # Read-only agent. Pushing, PRs and issue changes go through safe outputs.
 permissions:
@@ -78,8 +89,11 @@ safe-outputs:
     labels: [agent, frontend]
     draft: true
   add-comment:
+    # Dispatched runs have no triggering issue, so the issue is passed explicitly.
+    target: "*"
     max: 1
   add-labels:
+    target: "*"
     allowed: [in-progress, blocked]
     max: 1
 ---
@@ -91,7 +105,8 @@ calculator with the look of a Windows 98 application, built with Leptos and comp
 to WebAssembly. Read `README.md` and `ARCHITECTURE.md` before you start, and follow
 `ARCHITECTURE.md` exactly.
 
-Issue #${{ github.event.issue.number }} has just been approved for implementation.
+The orchestrator has asked you to implement issue #${{ github.event.inputs.issue_number }}.
+When you comment on or label the issue, pass this number as `item_number`.
 
 ## Find the approved plan
 
@@ -168,8 +183,8 @@ tried, add the `blocked` label, and stop.
 
 Open one draft pull request. Its description must include:
 
-- `Closes #${{ github.event.issue.number }}` on the first line, unless the plan also
-  has `[rust]` tasks, in which case use `Part of #${{ github.event.issue.number }}`;
+- `Closes #${{ github.event.inputs.issue_number }}` on the first line. The front-end stage
+  always runs last, so its PR closes the issue;
 - each `[frontend]` task from the plan, ticked if done;
 - each success criterion from the plan, and how the change meets it;
 - what you checked in the browser, including keyboard and narrow-screen checks;

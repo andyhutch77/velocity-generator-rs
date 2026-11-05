@@ -36,7 +36,7 @@ tools:
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  staged: true
+  # staged: true
   dispatch-workflow:
     workflows: [impl-rust, impl-frontend]
     # One stage per run. The next stage starts when this one's PR is merged.

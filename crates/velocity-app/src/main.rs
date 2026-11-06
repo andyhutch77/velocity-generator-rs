@@ -1,6 +1,6 @@
 mod components;
 
-use components::win98::{Label, ResultDisplay, TextInput, Window};
+use components::win98::{Heading, Label, ResultDisplay, TextInput, Window};
 use leptos::prelude::*;
 use velocity_core::{SprintVelocities, VelocityError};
 
@@ -51,7 +51,8 @@ fn App() -> impl IntoView {
         Signal::derive(move || average_text(&sprint1.get(), &sprint2.get(), &sprint3.get()));
     view! {
         <main class="win98-desktop">
-            <Window id="velocity-window" title="Velocity Calculator">
+            <Window id="velocity-window" title="Velocity Generator">
+                <Heading>"Velocity Generator"</Heading>
                 <div class="win98-field">
                     <Label for_id="sprint1">"Sprint 1 velocity"</Label>
                     <TextInput id="sprint1" value=sprint1 />

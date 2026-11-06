@@ -29,6 +29,7 @@
   /* Fonts */
   --font-ui: "MS Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
   --font-size-ui: 1rem;
+  --font-size-heading: 1.75rem;
 
   /* Sizes */
   --window-width: 360px;
@@ -74,6 +75,13 @@ body {
 
 .win98-window__body {
   padding: var(--space-3);
+}
+
+.win98-heading {
+  margin: 0 0 var(--space-3);
+  color: var(--color-title-bar);
+  font-size: var(--font-size-heading);
+  font-weight: bold;
 }
 
 .win98-field {

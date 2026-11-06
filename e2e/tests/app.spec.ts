@@ -44,6 +44,19 @@ for (const bad of ['', 'abc', '-1']) {
   });
 }
 
+test('number of engineers defaults to 10, sits below the average and accepts typing', async ({
+  page,
+}) => {
+  const engineers = page.getByLabel('Number of Engineers 🤼');
+  await expect(engineers).toHaveValue('10');
+  const average = await page.locator('#average').boundingBox();
+  const field = await engineers.boundingBox();
+  expect(field!.y).toBeGreaterThan(average!.y + average!.height - 1);
+  await engineers.fill('12');
+  await expect(engineers).toHaveValue('12');
+  await expect(page.locator('#average output')).toHaveText('10');
+});
+
 test('keyboard reaches each input with a visible focus outline', async ({ page }) => {
   for (const n of [1, 2, 3]) {
     await page.keyboard.press('Tab');

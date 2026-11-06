@@ -30,7 +30,7 @@ tools:
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  staged: true
+  # staged: true
   create-pull-request-review-comment:
     max: 10
     required-labels: [agent]

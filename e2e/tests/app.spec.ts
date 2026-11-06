@@ -4,10 +4,19 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-test('shows the heading', async ({ page }) => {
+test('shows the heading in the title bar and the window body', async ({ page }) => {
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Velocity Calculator' }),
+    page.getByRole('heading', { level: 1, name: 'Velocity Generator' }),
   ).toBeVisible();
+  const bodyHeading = page
+    .locator('#velocity-window')
+    .getByRole('heading', { level: 2, name: 'Velocity Generator 🚀' });
+  await expect(bodyHeading).toBeVisible();
+  const size = (locator: typeof bodyHeading) =>
+    locator.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  const titleSize = await size(page.getByRole('heading', { level: 1 }));
+  expect(await size(bodyHeading)).toBeGreaterThan(titleSize);
+  await expect(page).toHaveTitle('Velocity Generator');
 });
 
 test('shows the default average of 10', async ({ page }) => {

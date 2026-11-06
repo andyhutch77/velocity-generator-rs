@@ -95,12 +95,16 @@ workflows, labels, secrets or permissions.
   the UI.
 - Add or update tests to cover the change.
 
+Run each check as its own command, with no `cd … &&` or `;` chains: shell commands
+are only permitted when every part is allowed, so a chain is denied as a whole. Run
+Trunk from the repository root by passing the page: `trunk build crates/velocity-app/index.html`.
+
 Before finishing, run these and make sure they pass:
 
 - `cargo fmt --all`
 - `cargo clippy --workspace --all-targets -- -D warnings`
 - `cargo test --workspace`
-- `trunk build` in `crates/velocity-app`, if you changed anything in that crate
+- `trunk build crates/velocity-app/index.html`, if you changed anything in that crate
 
 ## Finish
 

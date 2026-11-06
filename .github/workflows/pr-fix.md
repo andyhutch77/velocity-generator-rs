@@ -48,7 +48,7 @@ network:
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  staged: true
+  # staged: true
   push-to-pull-request-branch:
     # Only ever push to PRs the agents opened, never to a human's PR.
     required-title-prefix: "[agent] "

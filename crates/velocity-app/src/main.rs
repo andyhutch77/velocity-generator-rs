@@ -52,7 +52,7 @@ fn App() -> impl IntoView {
     view! {
         <main class="win98-desktop">
             <Window id="velocity-window" title="Velocity Generator">
-                <Heading>"Velocity Generator"</Heading>
+                <Heading>"Velocity Generator 🚀"</Heading>
                 <div class="win98-field">
                     <Label for_id="sprint1">"Sprint 1 velocity"</Label>
                     <TextInput id="sprint1" value=sprint1 />

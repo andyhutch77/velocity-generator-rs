@@ -10,7 +10,7 @@ test('shows the heading in the title bar and the window body', async ({ page }) 
   ).toBeVisible();
   const bodyHeading = page
     .locator('#velocity-window')
-    .getByRole('heading', { level: 2, name: 'Velocity Generator' });
+    .getByRole('heading', { level: 2, name: 'Velocity Generator 🚀' });
   await expect(bodyHeading).toBeVisible();
   const size = (locator: typeof bodyHeading) =>
     locator.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));

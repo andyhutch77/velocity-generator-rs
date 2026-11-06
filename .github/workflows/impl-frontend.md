@@ -74,8 +74,8 @@ tools:
     - "cat /tmp/gh-aw/agent/trunk.log"
     - "git status"
     - "git diff:*"
-  # Playwright MCP server: a real browser. What it can reach is limited by
-  # the network firewall below, not here.
+  # Playwright: a real browser, driven with the `playwright-cli` command.
+  # What it can reach is limited by the network firewall below, not here.
   playwright:
 
 network:
@@ -158,13 +158,21 @@ or styles from the original React version, and no third-party theme CSS.
 ## Check your work in the browser
 
 The app is running at `http://host.docker.internal:5173` and rebuilds when you save.
-The browser runs in its own container, so always use `host.docker.internal`, never
-`localhost`. Use the Playwright browser tools for these checks, not shell
-commands like `curl`, which aren't permitted. Never try to start or restart the
-dev server yourself. If the page fails
-to load, read `/tmp/gh-aw/agent/trunk.log` for the build error.
+Always use `host.docker.internal`, never `localhost`. Never try to start or restart
+the dev server yourself. If the page fails to load, read
+`/tmp/gh-aw/agent/trunk.log` for the build error.
 
-Using the Playwright browser tools:
+The browser is driven with the **`playwright-cli`** shell command, which is already
+installed and allowed. Its skill describes the subcommands (for example
+`playwright-cli open <url>` and `playwright-cli snapshot`).
+
+**Run each `playwright-cli` command on its own.** Shell commands are only permitted
+when every part is allowed, so a chain that includes anything else, such as
+`command -v`, `which`, `curl` or `;`/`&&` with another program, is denied as a
+whole. Don't check whether the tool exists first: just run it. If a command is
+denied, retry it on its own before concluding the browser is unavailable.
+
+Using `playwright-cli`:
 
 1. Load the page and confirm your changes render with no errors in the console.
 2. Use the feature the way a user would: click buttons, type into fields, and check

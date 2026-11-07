@@ -41,7 +41,7 @@ tools:
 
 safe-outputs:
   # Staged: preview only, in the run summary. Remove once you trust it.
-  staged: true
+  # staged: true
   # Plan check: one comment on the issue.
   add-comment:
     target: "*"

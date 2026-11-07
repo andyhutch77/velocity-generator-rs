@@ -11,6 +11,7 @@ fn main() {
 
 const DEFAULT_VELOCITY: &str = "10";
 const DEFAULT_ENGINEERS: &str = "10";
+const DEFAULT_PRODUCTIVE_DAYS: &str = "10";
 
 /// Turns the text of one sprint box into a number, or says what is wrong with it.
 fn parse_sprint(name: &str, text: &str) -> Result<f64, String> {
@@ -49,6 +50,7 @@ fn App() -> impl IntoView {
     let sprint2 = RwSignal::new(DEFAULT_VELOCITY.to_string());
     let sprint3 = RwSignal::new(DEFAULT_VELOCITY.to_string());
     let engineers = RwSignal::new(DEFAULT_ENGINEERS.to_string());
+    let productive_days = RwSignal::new(DEFAULT_PRODUCTIVE_DAYS.to_string());
     let average =
         Signal::derive(move || average_text(&sprint1.get(), &sprint2.get(), &sprint3.get()));
     view! {
@@ -72,6 +74,10 @@ fn App() -> impl IntoView {
                     <Label for_id="engineers">"Number of Engineers 🤼"</Label>
                     <TextInput id="engineers" value=engineers />
                 </div>
+                <div class="win98-field">
+                    <Label for_id="productive-days">"Number Of Productive Days 📆"</Label>
+                    <TextInput id="productive-days" value=productive_days />
+                </div>
             </Window>
         </main>
     }
@@ -79,7 +85,13 @@ fn App() -> impl IntoView {
 
 #[cfg(test)]
 mod tests {
-    use super::{average_text, DEFAULT_ENGINEERS};
+    use super::{average_text, DEFAULT_ENGINEERS, DEFAULT_PRODUCTIVE_DAYS};
+
+    #[test]
+    fn defaults_productive_days_to_ten() {
+        assert_eq!(DEFAULT_PRODUCTIVE_DAYS, "10");
+        assert!(DEFAULT_PRODUCTIVE_DAYS.parse::<f64>().is_ok());
+    }
 
     #[test]
     fn defaults_engineers_to_ten() {

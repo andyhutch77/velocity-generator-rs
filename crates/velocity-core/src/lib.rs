@@ -112,6 +112,8 @@ pub enum VelocityError {
     NoCapacity,
     /// A value is NaN, infinite or negative; names the field.
     InvalidValue(&'static str),
+    /// A value is not a whole or half day; names the field.
+    NotHalfDay(&'static str),
     /// Days off are more than developers times productive days.
     DaysOffExceedCapacity,
     /// Capacity percent is above 100.
@@ -126,6 +128,9 @@ impl std::fmt::Display for VelocityError {
             }
             Self::InvalidValue(field) => {
                 write!(f, "{field} must be a number that is not negative")
+            }
+            Self::NotHalfDay(field) => {
+                write!(f, "{field} must be a whole or half day, such as 1 or 1.5")
             }
             Self::DaysOffExceedCapacity => {
                 write!(
@@ -145,6 +150,22 @@ fn check_value(field: &'static str, value: f64) -> Result<(), VelocityError> {
         Ok(())
     } else {
         Err(VelocityError::InvalidValue(field))
+    }
+}
+
+/// Checks that a value is a whole or half day (0, 0.5, 1, 1.5 and so on).
+///
+/// # Errors
+///
+/// Returns [`VelocityError::InvalidValue`] when the value is NaN, infinite or
+/// negative, and [`VelocityError::NotHalfDay`] when it is not a multiple of 0.5.
+pub fn check_half_days(field: &'static str, value: f64) -> Result<(), VelocityError> {
+    check_value(field, value)?;
+    // Doubling is exact in floating point, so this is exact for multiples of 0.5.
+    if (value * 2.0).fract() == 0.0 {
+        Ok(())
+    } else {
+        Err(VelocityError::NotHalfDay(field))
     }
 }
 
@@ -401,6 +422,7 @@ mod tests {
         let errors = [
             VelocityError::NoCapacity,
             VelocityError::InvalidValue("days_off"),
+            VelocityError::NotHalfDay("days_off"),
             VelocityError::DaysOffExceedCapacity,
             VelocityError::CapacityOutOfRange,
         ];
@@ -408,6 +430,42 @@ mod tests {
             assert!(!e.to_string().is_empty());
             let _: &dyn std::error::Error = &e;
         }
+    }
+
+    #[test]
+    fn half_days_accepts_whole_and_half() {
+        for v in [0.0, 1.0, 1.5, 2.0, 2.5, 25.0] {
+            assert_eq!(check_half_days("days_off", v), Ok(()));
+        }
+    }
+
+    #[test]
+    fn half_days_rejects_other_fractions() {
+        for v in [1.3, 0.25, 2.75, 0.1] {
+            assert_eq!(
+                check_half_days("days_off", v),
+                Err(VelocityError::NotHalfDay("days_off"))
+            );
+        }
+    }
+
+    #[test]
+    fn half_days_rejects_negative_nan_and_infinite() {
+        for v in [-1.0, -0.5, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                check_half_days("days_off", v),
+                Err(VelocityError::InvalidValue("days_off"))
+            );
+        }
+    }
+
+    #[test]
+    fn half_day_message_is_plain_english() {
+        let msg = VelocityError::NotHalfDay("days_off").to_string();
+        assert_eq!(
+            msg,
+            "days_off must be a whole or half day, such as 1 or 1.5"
+        );
     }
 
     #[test]

@@ -1,8 +1,8 @@
 mod components;
 
-use components::win98::{Heading, Label, ResultDisplay, TextInput, Window};
+use components::win98::{ErrorMessage, Heading, Label, ResultDisplay, TextInput, Window};
 use leptos::prelude::*;
-use velocity_core::{SprintVelocities, VelocityError};
+use velocity_core::{check_half_days, SprintVelocities, VelocityError};
 
 fn main() {
     console_error_panic_hook::set_once();
@@ -12,6 +12,27 @@ fn main() {
 const DEFAULT_VELOCITY: &str = "10";
 const DEFAULT_ENGINEERS: &str = "10";
 const DEFAULT_PRODUCTIVE_DAYS: &str = "10";
+const DEFAULT_DAYS_OFF: &str = "25";
+
+/// Checks the days off text is a whole or half day, or says what is wrong with it.
+fn parse_days_off(text: &str) -> Result<f64, String> {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return Err("Days off is empty. Enter a number such as 1 or 1.5.".to_string());
+    }
+    let value = trimmed
+        .parse::<f64>()
+        .ok()
+        .filter(|value| value.is_finite())
+        .ok_or_else(|| "Days off must be a number such as 1 or 1.5.".to_string())?;
+    check_half_days("days_off", value).map_err(|error| match error {
+        VelocityError::NotHalfDay(_) => {
+            "Days off must be a whole or half day, such as 1 or 1.5.".to_string()
+        }
+        _ => "Days off must be a number that is not negative.".to_string(),
+    })?;
+    Ok(value)
+}
 
 /// Turns the text of one sprint box into a number, or says what is wrong with it.
 fn parse_sprint(name: &str, text: &str) -> Result<f64, String> {
@@ -51,6 +72,8 @@ fn App() -> impl IntoView {
     let sprint3 = RwSignal::new(DEFAULT_VELOCITY.to_string());
     let engineers = RwSignal::new(DEFAULT_ENGINEERS.to_string());
     let productive_days = RwSignal::new(DEFAULT_PRODUCTIVE_DAYS.to_string());
+    let days_off = RwSignal::new(DEFAULT_DAYS_OFF.to_string());
+    let days_off_error = Signal::derive(move || parse_days_off(&days_off.get()).err());
     let average =
         Signal::derive(move || average_text(&sprint1.get(), &sprint2.get(), &sprint3.get()));
     view! {
@@ -78,6 +101,22 @@ fn App() -> impl IntoView {
                     <Label for_id="productive-days">"Number Of Productive Days 📆"</Label>
                     <TextInput id="productive-days" value=productive_days />
                 </div>
+                <div class="win98-field">
+                    <Label for_id="days-off">"Number Of Days off 🏖"</Label>
+                    <TextInput
+                        id="days-off"
+                        value=days_off
+                        described_by="days-off-error"
+                        invalid=Signal::derive(move || days_off_error.get().is_some())
+                    />
+                    {move || {
+                        days_off_error
+                            .get()
+                            .map(|message| {
+                                view! { <ErrorMessage id="days-off-error">{message}</ErrorMessage> }
+                            })
+                    }}
+                </div>
             </Window>
         </main>
     }
@@ -85,7 +124,44 @@ fn App() -> impl IntoView {
 
 #[cfg(test)]
 mod tests {
-    use super::{average_text, DEFAULT_ENGINEERS, DEFAULT_PRODUCTIVE_DAYS};
+    use super::{
+        average_text, parse_days_off, DEFAULT_DAYS_OFF, DEFAULT_ENGINEERS, DEFAULT_PRODUCTIVE_DAYS,
+    };
+
+    #[test]
+    fn defaults_days_off_to_25() {
+        assert_eq!(DEFAULT_DAYS_OFF, "25");
+        assert_eq!(parse_days_off(DEFAULT_DAYS_OFF), Ok(25.0));
+    }
+
+    #[test]
+    fn accepts_whole_and_half_days() {
+        for text in ["0", "1", "1.5", "2", " 2.5 "] {
+            assert!(parse_days_off(text).is_ok(), "{text}");
+        }
+    }
+
+    #[test]
+    fn says_nan_and_infinity_are_not_numbers() {
+        for text in ["NaN", "inf", "-inf", "infinity"] {
+            assert_eq!(
+                parse_days_off(text),
+                Err("Days off must be a number such as 1 or 1.5.".to_string()),
+                "{text}"
+            );
+        }
+        assert_eq!(
+            parse_days_off("-1"),
+            Err("Days off must be a number that is not negative.".to_string())
+        );
+    }
+
+    #[test]
+    fn rejects_bad_days_off() {
+        for text in ["", "abc", "-1", "1.3", "1.25", "NaN", "inf"] {
+            assert!(parse_days_off(text).is_err(), "{text}");
+        }
+    }
 
     #[test]
     fn defaults_productive_days_to_ten() {

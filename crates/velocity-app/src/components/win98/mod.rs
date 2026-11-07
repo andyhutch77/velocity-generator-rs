@@ -3,6 +3,7 @@
 #![allow(dead_code, unused_imports)]
 
 mod button;
+mod error_message;
 mod heading;
 mod label;
 mod result_display;
@@ -11,6 +12,7 @@ mod title_bar;
 mod window;
 
 pub use button::Button;
+pub use error_message::ErrorMessage;
 pub use heading::Heading;
 pub use label::Label;
 pub use result_display::ResultDisplay;

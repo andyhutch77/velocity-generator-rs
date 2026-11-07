@@ -33,6 +33,12 @@ safe-outputs:
   remove-labels:
     allowed: [needs-plan, blocked]
     max: 2
+  # Starts the architect agent to check each new plan before you approve it.
+  # (Labels added by agents don't trigger other workflows, so the architect
+  # can't just listen for plan-review.)
+  dispatch-workflow:
+    workflows: [arch-review]
+    max: 1
 ---
 
 # Plan the work for an issue
@@ -94,6 +100,10 @@ feedback, then remove and re-add `needs-plan`.
 ```
 
 Then add the `plan-review` label and remove `needs-plan` (and `blocked`, if present).
+
+Finally, start the architect review by dispatching the `arch-review` workflow with
+`issue_number` set to this issue's number (as a string). Only do this when you've
+posted a plan, not when you've asked questions.
 
 ## Planning rules
 

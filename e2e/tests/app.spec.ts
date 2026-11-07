@@ -57,6 +57,19 @@ test('number of engineers defaults to 10, sits below the average and accepts typ
   await expect(page.locator('#average output')).toHaveText('10');
 });
 
+test('number of productive days defaults to 10, sits below engineers and accepts typing', async ({
+  page,
+}) => {
+  const days = page.getByLabel('Number Of Productive Days 📆');
+  await expect(days).toHaveValue('10');
+  const engineers = await page.getByLabel('Number of Engineers 🤼').boundingBox();
+  const field = await days.boundingBox();
+  expect(field!.y).toBeGreaterThan(engineers!.y);
+  await days.fill('8');
+  await expect(days).toHaveValue('8');
+  await expect(page.locator('#average output')).toHaveText('10');
+});
+
 test('keyboard reaches each input with a visible focus outline', async ({ page }) => {
   for (const n of [1, 2, 3]) {
     await page.keyboard.press('Tab');

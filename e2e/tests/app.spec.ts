@@ -70,6 +70,25 @@ test('number of productive days defaults to 10, sits below engineers and accepts
   await expect(page.locator('#average output')).toHaveText('10');
 });
 
+test('number of days off defaults to 25, sits below productive days and checks half days', async ({
+  page,
+}) => {
+  const daysOff = page.getByLabel('Number Of Days off 🏖');
+  await expect(daysOff).toHaveValue('25');
+  const productive = await page.getByLabel('Number Of Productive Days 📆').boundingBox();
+  const field = await daysOff.boundingBox();
+  expect(field!.y).toBeGreaterThan(productive!.y);
+  for (const good of ['0', '1', '1.5', '2', '2.5']) {
+    await daysOff.fill(good);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  }
+  for (const bad of ['abc', '-1', '1.3', '']) {
+    await daysOff.fill(bad);
+    await expect(page.getByRole('alert')).toContainText('Days off');
+    await expect(daysOff).toHaveAttribute('aria-describedby', 'days-off-error');
+  }
+});
+
 test('keyboard reaches each input with a visible focus outline', async ({ page }) => {
   for (const n of [1, 2, 3]) {
     await page.keyboard.press('Tab');

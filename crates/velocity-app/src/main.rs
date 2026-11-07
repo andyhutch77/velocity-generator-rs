@@ -22,7 +22,9 @@ fn parse_days_off(text: &str) -> Result<f64, String> {
     }
     let value = trimmed
         .parse::<f64>()
-        .map_err(|_| "Days off must be a number such as 1 or 1.5.".to_string())?;
+        .ok()
+        .filter(|value| value.is_finite())
+        .ok_or_else(|| "Days off must be a number such as 1 or 1.5.".to_string())?;
     check_half_days("days_off", value).map_err(|error| match error {
         VelocityError::NotHalfDay(_) => {
             "Days off must be a whole or half day, such as 1 or 1.5.".to_string()
@@ -137,6 +139,21 @@ mod tests {
         for text in ["0", "1", "1.5", "2", " 2.5 "] {
             assert!(parse_days_off(text).is_ok(), "{text}");
         }
+    }
+
+    #[test]
+    fn says_nan_and_infinity_are_not_numbers() {
+        for text in ["NaN", "inf", "-inf", "infinity"] {
+            assert_eq!(
+                parse_days_off(text),
+                Err("Days off must be a number such as 1 or 1.5.".to_string()),
+                "{text}"
+            );
+        }
+        assert_eq!(
+            parse_days_off("-1"),
+            Err("Days off must be a number that is not negative.".to_string())
+        );
     }
 
     #[test]

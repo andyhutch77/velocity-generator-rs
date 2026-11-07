@@ -82,11 +82,28 @@ test('number of days off defaults to 25, sits below productive days and checks h
     await daysOff.fill(good);
     await expect(page.getByRole('alert')).toHaveCount(0);
   }
-  for (const bad of ['abc', '-1', '1.3', '']) {
+  for (const bad of ['abc', '-1', '1.3', '', 'NaN', 'inf']) {
     await daysOff.fill(bad);
-    await expect(page.getByRole('alert')).toContainText('Days off');
+    await expect(page.getByRole('alert')).toContainText('! Days off');
     await expect(daysOff).toHaveAttribute('aria-describedby', 'days-off-error');
+    await expect(daysOff).toHaveAttribute('aria-invalid', 'true');
   }
+  for (const text of ['NaN', 'inf']) {
+    await daysOff.fill(text);
+    await expect(page.getByRole('alert')).toContainText('must be a number such as');
+    await expect(page.getByRole('alert')).not.toContainText('not negative');
+  }
+  await daysOff.fill('1.5');
+  await expect(daysOff).not.toHaveAttribute('aria-invalid', 'true');
+});
+
+test('keyboard reaches the days off input with a visible focus outline', async ({ page }) => {
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Tab');
+  }
+  const input = page.getByLabel('Number Of Days off 🏖');
+  await expect(input).toBeFocused();
+  await expect(input).not.toHaveCSS('outline-style', 'none');
 });
 
 test('keyboard reaches each input with a visible focus outline', async ({ page }) => {

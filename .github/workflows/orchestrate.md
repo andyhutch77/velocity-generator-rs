@@ -41,6 +41,9 @@ safe-outputs:
     workflows: [impl-rust, impl-frontend]
     # One stage per run. The next stage starts when this one's PR is merged.
     max: 1
+    # Always start agents on main. Without this, a run started by a merged PR
+    # tries to dispatch on that PR's (now merged) branch, which isn't allowed.
+    target-ref: main
   add-comment:
     # Posts on the issue even when the run was started by a PR merge.
     target: "*"

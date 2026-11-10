@@ -26,7 +26,10 @@ permissions:
   issues: read
 
 engine: copilot
-model: gpt-4.1-mini
+# "small" picks the newest small model your Copilot account actually offers,
+# checked live each run. A specific model ID can fail with "400 The requested
+# model is not supported" if it isn't in your account's catalog.
+model: small
 
 tools:
   github:

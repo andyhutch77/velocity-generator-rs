@@ -42,117 +42,113 @@ It's also hands-on practice for the **GitHub GH-600: Agentic AI Developer** exam
 
 ### The big picture
 
-There are three human gates: approving the plan, approving the PR, and approving the production deploy. Agents never write to the repo directly. They request actions through **safe outputs**, which run as separate, tightly scoped jobs.
+Every change starts as an issue and passes through three human gates: **approving the plan**, **approving the pull request**, and **approving the deploy**. Agents never write to the repo directly. Each one runs read-only behind a network firewall and asks for actions (a comment, a label, a PR) through **safe outputs**, which run as separate, tightly scoped jobs.
 
 ```mermaid
-flowchart LR
-    A[Issue opened] --> B[Triage agent]
-    B --> C[Planner agent]
-    C --> D{You approve plan?}
-    D -- "no: comment, then /plan" --> C
-    D -- "yes: plan-approved" --> E[Orchestrator]
-    E --> F[Specialist agents open draft PRs]
-    F --> G[Required checks]
-    G -- "fail: /fix" --> F
-    G -- pass --> H{You approve PR?}
-    H -- yes --> I[Merge to main]
-    I --> J[Build, attest, smoke test]
-    J --> K{You approve deploy?}
-    K -- yes --> L[GitHub Pages]
+flowchart TB
+    A[Issue opened] --> T[Triage agent]
+    T -- unclear --> BL[blocked: questions asked]
+    BL -- you reply --> T
+    T -- clear --> NP{{You add needs-plan}}
+    NP --> P[Planner agent posts a plan]
+    P --> AR[Architect checks the plan]
+    AR --> G1{You approve the plan?}
+    G1 -- "no: comment, re-add needs-plan" --> P
+    G1 -- "yes: add plan-approved" --> O[Orchestrator]
+    O -- "[rust] tasks first" --> R[Rust agent]
+    O -- "then [frontend] tasks" --> FE[Front-end agent]
+    R --> PR[Draft PR]
+    FE --> PR
+    PR -- you mark it ready --> CI[CI checks + reviewer agent]
+    CI -- "changes needed: /fix" --> FX[Fix agent pushes to the PR]
+    FX -- you mark it ready again --> CI
+    CI --> G2{You approve the PR?}
+    G2 -- merge --> O
+    G2 -- merge --> D[Build + attest]
+    D --> G3{You approve the deploy?}
+    G3 --> PAGES[GitHub Pages]
 ```
+
+When an agent PR is merged, the orchestrator runs again: if the plan still has front-end work it starts the front-end agent, otherwise it posts a final update and clears the issue's workflow labels.
 
 ### Issue lifecycle (labels)
 
-Labels hold each issue's state. Only a human can apply `needs-plan` and `plan-approved`, the two labels that move work forward.
+Labels hold each issue's state. Only a human can add `needs-plan` and `plan-approved`, the two labels that move work forward.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> needs_triage: issue opened
-    needs_triage --> blocked: agent needs an answer
-    blocked --> needs_triage: question answered
+    [*] --> needs_triage: issue clear
+    [*] --> blocked: issue unclear
+    blocked --> needs_triage: you reply, triage re-runs
     needs_triage --> needs_plan: you add needs-plan
+    blocked --> needs_plan: you add needs-plan
     needs_plan --> plan_review: planner posts plan
-    plan_review --> plan_review: feedback + /plan
+    plan_review --> needs_plan: feedback, re-add needs-plan
     plan_review --> plan_approved: you add plan-approved
     plan_approved --> in_progress: agent PR opened
-    in_progress --> [*]: PR merged
+    in_progress --> [*]: last PR merged, labels cleared
 ```
 
 | Label | Meaning | Set by |
 | --- | --- | --- |
-| `needs-triage` | New issue, not yet looked at | Triage agent |
-| `needs-plan` | Ready for an agent plan | You |
-| `plan-review` | Plan posted, waiting on you | Planner agent |
+| `needs-triage` | Clear enough to plan | Triage agent |
+| `blocked` | Waiting for answers | Any agent |
+| `needs-plan` | Write (or rewrite) a plan | You |
+| `plan-review` | Plan posted, waiting for you | Planner |
 | `plan-approved` | Go ahead and build it | You |
-| `in-progress` | Agent PR open | Implementer agent |
-| `blocked` | Agent needs an answer | Any agent |
+| `in-progress` | Agent PR open | Implementer agents |
+| `agent`, `rust`, `frontend` | On agent PRs, marking who wrote them | Implementer agents |
 
-The planner runs only when a maintainer adds the `needs-plan` label. To request a
-revised plan, leave feedback in a comment, then remove and re-add `needs-plan`;
-commenting by itself does not trigger the planner. The planner removes
-`needs-plan` after posting a plan, so each run requires adding it again.
+### The agents
 
-### Agents and orchestration
+All agents are markdown files in `.github/workflows/`, compiled by gh-aw into `.lock.yml` Actions workflows.
 
-When a plan is approved, the orchestrator splits it into tasks and hands each one to a specialist agent on its own branch, so their changes don't collide. The architect agent reviews plans and PRs against `ARCHITECTURE.md` but never writes code.
+| Agent | File | Starts when | Can do |
+| --- | --- | --- | --- |
+| Triage | `triage.md` | An issue is opened or reopened, or someone replies to a `blocked` issue | Comment; add `needs-triage` or `blocked`; remove `blocked` |
+| Planner | `plan.md` | You add `needs-plan` | Post a plan; label it; start the architect |
+| Architect | `arch-review.md` | The planner posts a plan, and every Monday | Comment a verdict on the plan; open a weekly `[arch]` drift report |
+| Orchestrator | `orchestrate.md` | You add `plan-approved`, or an agent PR is merged | Start the Rust or front-end agent; post a progress table; clear labels at the end |
+| Rust agent | `impl-rust.md` | The orchestrator starts it | Open a draft PR for the plan's `[rust]` tasks |
+| Front-end agent | `impl-frontend.md` | The orchestrator starts it | Open a draft PR for the `[frontend]` tasks, after checking them in a real browser |
+| Reviewer | `pr-review.md` | You mark an agent PR ready for review | Line comments and a summary review (comment only, never approve or block) |
+| Fix agent | `pr-fix.md` | You comment `/fix <what to change>` on an agent PR | Push a commit to that PR and explain what it changed |
 
-```mermaid
-flowchart TB
-    P[Approved plan] --> O[Orchestrator]
-    O -- dispatch --> R[Rust agent]
-    O -- dispatch --> FE[Front-end design agent]
-    R --> PR1[Draft PR: core logic]
-    FE --> PR2[Draft PR: UI]
-    PR1 --> REV[Reviewer agent]
-    PR2 --> REV
-    ARCH[Architect agent] -. reviews .-> P
-    ARCH -. reviews .-> PR1
-    ARCH -. reviews .-> PR2
+Triage and the orchestrator do simple, rule-based work, so they use a smaller, cheaper model. The rest use Copilot's default model.
 
-    subgraph MCP[MCP servers]
-        GH[GitHub MCP]
-        PW[Playwright MCP]
-        VM[velocity-mcp]
-    end
-
-    R -.-> GH
-    R -.-> VM
-    FE -.-> PW
-    REV -.-> GH
-```
-
-| Agent | Files | Job |
-| --- | --- | --- |
-| Triage | `.github/workflows/triage.md` | Checks new issues are clear, asks questions |
-| Planner | `.github/workflows/plan.md` | Writes a plan with approach, files, tests, risks and success criteria |
-| Orchestrator | `.github/workflows/orchestrate.md` | Splits the approved plan and dispatches specialists |
-| Rust agent | `.github/agents/rust.agent.md` + `impl-rust.md` | Core logic: idiomatic Rust, clippy clean, tested |
-| Front-end design agent | `.github/agents/frontend.agent.md` + `impl-frontend.md` | UI, accessibility, responsive layout |
-| Reviewer | `.github/workflows/pr-review.md` | Reviews each PR against its plan |
-| Fixer | `.github/workflows/pr-fix.md` | Responds to `/fix` on a PR |
-| Architect | `.github/agents/architect.agent.md` + `arch-review.md` | Guards structure and patterns; weekly drift report |
+**Tools:** every agent reads GitHub through the GitHub MCP server. The implementer and fix agents can edit files and run a short allow-list of commands (`cargo fmt`, `clippy`, `test`, `trunk build`). The front-end agent also drives a Playwright browser against a local dev server.
 
 ### CI/CD and security gates
 
-Agent PRs face exactly the same required checks as human ones.
+Agent PRs face exactly the same required checks as human ones. Because PRs and pushes made by agents don't trigger other workflows, CI runs when you mark a draft PR **ready for review**.
 
 ```mermaid
 flowchart LR
-    PR[Pull request] --> B[cargo build + test]
-    PR --> L[clippy + rustfmt]
-    PR --> E2E[Playwright e2e]
+    PR[PR marked ready] --> L[Format and clippy]
+    PR --> T[Test]
+    PR --> W[Build WebAssembly]
+    PR --> E[E2E tests]
+    PR --> CD[Cargo deny]
+    PR --> DR[Dependency review]
     PR --> CQ[CodeQL]
-    PR --> DR[Dependency review + cargo deny]
-    PR --> WL[Workflow lint]
-    B & L & E2E & CQ & DR & WL --> OK{All green?}
-    OK -- yes --> APPROVE[Your approval]
-    APPROVE --> MERGE[Merge to main]
-    MERGE --> BUILD[trunk build --release]
-    BUILD --> SBOM[SBOM + provenance attestation]
-    SBOM --> SMOKE[Smoke tests]
-    SMOKE --> VERIFY[gh attestation verify]
-    VERIFY --> PAGES[Deploy to GitHub Pages]
+    L & T & W & E & CD & DR & CQ --> OK{All green?}
+    OK -- yes --> AP[Your approval]
+    AP --> M[Merge to main]
+    M --> B[trunk build --release]
+    B --> AT[Build provenance attestation]
+    AT --> G{You approve the deploy?}
+    G --> PAGES[GitHub Pages]
 ```
+
+## Using it day to day
+
+1. **Open an issue** describing one small change. Triage labels it, or asks questions; reply on the issue and triage looks again.
+2. **Add `needs-plan`.** Read the plan and the architect's verdict. To change the plan, comment, then remove and re-add `needs-plan`.
+3. **Add `plan-approved`.** The orchestrator starts the right agent and posts a progress table on the issue.
+4. **Review the draft PR.** Click **Ready for review** to run CI and the reviewer.
+5. **Ask for changes** with `/fix <what to change>`. After the fix is pushed, click **Convert to draft** then **Ready for review** to re-run CI and the review.
+6. **Approve and merge.** For issues with both Rust and front-end work, the orchestrator then starts the next stage automatically.
+7. **Approve the deploy** in the Actions run to publish to GitHub Pages.
 
 ## Guardrails
 
@@ -160,15 +156,52 @@ flowchart LR
 | --- | --- | --- |
 | Label or comment on an issue | Low | Acts alone |
 | Write or rewrite a plan | Low | Acts alone; you approve before any code |
-| Open a draft PR | Medium | Acts alone; merge needs you |
+| Open a draft PR, or push a `/fix` to one | Medium | Acts alone; merge needs you |
+| Review a PR | Low | Comment only; can't approve or block |
 | Merge to `main` | High | Humans only |
-| Deploy to Pages | High | Human approves the environment |
+| Deploy to Pages | High | You approve the `github-pages` environment |
 | Edit anything under `.github/` | High | Blocked for agents |
 
-- Agents run with **read-only** permissions; all writes go through capped, allow-listed safe outputs.
-- `main` is protected by a ruleset: PR required, checks required, one approval, no force pushes.
+- Agents run with **read-only** permissions; every write goes through capped, allow-listed safe outputs, checked by **threat detection** before it's applied.
+- Agents can't add `needs-plan` or `plan-approved`, and only ever push to PRs titled `[agent]` with the `agent` label.
+- Network access is limited by a firewall to GitHub, the Rust ecosystem and, for the front-end agent, the local dev server.
+- New third-party Actions used by agents need explicit approval when compiling (`gh aw compile --approve`).
+- `main` is protected by a ruleset: PR required, all checks required, one approval, re-approval after new pushes, squash merges only, no force pushes.
 - `CODEOWNERS` requires human review for anything under `.github/`.
-- Safe outputs pass through **agentic threat detection** before they're applied.
+- New agents start in **staged mode** (they preview their actions without taking them) until they've proved themselves.
+
+## Maintaining it
+
+The one-off manual setup (accounts, ruleset, security, Pages, the Copilot token and
+gh-aw) is described step by step in **[docs/setup.md](docs/setup.md)**.
+
+- **Changing an agent:** edit its `.md` file, run `gh aw compile --strict`, and commit both the `.md` and `.lock.yml` through a PR.
+- **After fixing a workflow,** re-trigger it the normal way (re-add the label, comment, or merge). **Re-run** in Actions replays the old version.
+- **Copilot token:** agents authenticate with the `COPILOT_GITHUB_TOKEN` repository secret, a fine-grained personal access token with **Copilot Requests** permission. When it expires, every agent fails with a `401` / "model catalog unavailable" error. Regenerate it and run `gh secret set COPILOT_GITHUB_TOKEN`.
+- **Costs:** `gh aw logs` shows the AI credits each run used. Small issues keep runs cheap.
+
+## Lessons learned
+
+Problems hit while building the agent pipeline, and what fixed them. Each has a
+different kind of root cause, which is the first thing to work out when an agent fails.
+
+| Symptom | Cause | Fix | Root cause |
+| --- | --- | --- | --- |
+| Adding `needs-plan` always skipped the planner | Combining a `/plan` slash command with a label trigger compiled into a condition that required `/plan` for label events too | Planner uses the label only; revise by re-adding it | Configuration |
+| Agent pushed a branch but opened an issue, not a PR | The repo didn't allow Actions to create pull requests | Repo setting (see [docs/setup.md](docs/setup.md)) | Environment |
+| Agent couldn't create a folder for a planned file | `mkdir` wasn't on its command allow-list, and the planner had invented a folder outside `ARCHITECTURE.md` | Allowed `mkdir`; told the planner to use only documented folders | Tool access + context |
+| Front-end agent: "MCP gateway readiness failed (HTTP 405)" | The dev server and the MCP gateway both used port 8080, so the gateway's health check hit the app | Dev server on port 5173 | Environment |
+| Browser got a 403 loading the dev server | Naming `host.docker.internal` in the firewall only opens ports 80 and 443 | The `local` network entry, which opens common dev ports | Environment |
+| Agent said "no browser tools available" | Instructions described MCP browser tools, but gh-aw provides `playwright-cli`; the agent's chained command (`command -v …; playwright-cli …`) was denied as a whole | Instructions name `playwright-cli` and say to run each command on its own | Instructions + tool use |
+| Dispatched agents never started | Dispatched runs come from the `github-actions` bot, which gh-aw's permission check rejects by default | `bots: [github-actions]` on dispatched workflows | Configuration |
+| Front-end agent: "Refusing PR checkout" | Started from a run triggered by a merged PR, it tried to check out that already-merged PR | `checkout: pull-request: false` on the implementer agents | Configuration |
+| Orchestrator: "Ref … is not in allowed-refs" | Dispatches from a PR-triggered run default to that PR's branch | `target-ref: main` on the orchestrator's dispatch | Configuration |
+| Every agent failed with a 401 / "model catalog unavailable" | The `COPILOT_GITHUB_TOKEN` secret held an expired token | New token, `gh secret set COPILOT_GITHUB_TOKEN` | Credentials |
+| Re-running a failed run didn't pick up a merged fix | **Re-run** replays the workflow as it was at the original commit | Re-trigger the normal way (label, comment or merge) | Process |
+
+What helped most: reading the gh-aw job logs (the `agent` and `safe_outputs` jobs) and
+the compiled `.lock.yml`, not just the agent's own summary. Twice the agent reported
+an action it had only *requested*, in staged mode or before a safe output was refused.
 
 ## Contributing
 

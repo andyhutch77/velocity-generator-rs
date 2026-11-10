@@ -13,6 +13,8 @@ A Rust rebuild of [Velocity Calculator](https://github.com/andyhutch77/velocity-
 
 Velocity Calculator works out a team's velocity for an upcoming sprint, so it can plan how much work to commit to. The [original version](https://andyhutch77.github.io/velocity-calculator/) is a React app with a retro Windows 98 look. This rebuild matches its behaviour and look, but **no code is carried over**. The UI is written from scratch with a modern Rust front-end framework, and the Windows 98 styling comes from the project's own reusable component library and design tokens.
 
+**[Live app](https://andyhutch77.github.io/velocity-generator-rs/)** · **[Walkthrough: one issue, end to end](docs/walkthrough.md)** · **[Setup guide](docs/setup.md)**
+
 ## Project goal
 
 This repo has two goals:
@@ -46,28 +48,30 @@ Every change starts as an issue and passes through three human gates: **approvin
 
 ```mermaid
 flowchart TB
-    A[Issue opened] --> T[Triage agent]
-    T -- unclear --> BL[blocked: questions asked]
-    BL -- you reply --> T
-    T -- clear --> NP{{You add needs-plan}}
-    NP --> P[Planner agent posts a plan]
-    P --> AR[Architect checks the plan]
-    AR --> G1{You approve the plan?}
+    A["① Issue opened"] --> T["② Triage agent"]
+    T -- unclear --> BL["② blocked: questions asked"]
+    BL -- "③ you reply" --> T
+    T -- clear --> NP{{"④ You add needs-plan"}}
+    NP --> P["④ Planner agent posts a plan"]
+    P --> AR["⑤ Architect checks the plan"]
+    AR --> G1{"⑥ You approve the plan?"}
     G1 -- "no: comment, re-add needs-plan" --> P
-    G1 -- "yes: add plan-approved" --> O[Orchestrator]
-    O -- "[rust] tasks first" --> R[Rust agent]
-    O -- "then [frontend] tasks" --> FE[Front-end agent]
-    R --> PR[Draft PR]
+    G1 -- "yes: add plan-approved" --> O["⑥ Orchestrator"]
+    O -- "[rust] tasks first" --> R["⑦ Rust agent"]
+    O -- "then [frontend] tasks" --> FE["⑦ Front-end agent"]
+    R --> PR["⑦ Draft PR"]
     FE --> PR
-    PR -- you mark it ready --> CI[CI checks + reviewer agent]
-    CI -- "changes needed: /fix" --> FX[Fix agent pushes to the PR]
+    PR -- you mark it ready --> CI["⑧ CI checks + reviewer agent"]
+    CI -- "changes needed: /fix" --> FX["⑨ Fix agent pushes to the PR"]
     FX -- you mark it ready again --> CI
-    CI --> G2{You approve the PR?}
+    CI --> G2{"⑩ You approve the PR?"}
     G2 -- merge --> O
-    G2 -- merge --> D[Build + attest]
-    D --> G3{You approve the deploy?}
-    G3 --> PAGES[GitHub Pages]
+    G2 -- merge --> D["⑪ Build + attest"]
+    D --> G3{"⑪ You approve the deploy?"}
+    G3 --> PAGES["⑫ GitHub Pages"]
 ```
+
+**See it in action:** the [walkthrough](docs/walkthrough.md) follows one real issue through every numbered step of this diagram, with annotated screenshots of what each step looks like in GitHub.
 
 When an agent PR is merged, the orchestrator runs again: if the plan still has front-end work it starts the front-end agent, otherwise it posts a final update and clears the issue's workflow labels.
 
@@ -114,7 +118,7 @@ All agents are markdown files in `.github/workflows/`, compiled by gh-aw into `.
 | Reviewer | `pr-review.md` | You mark an agent PR ready for review | Line comments and a summary review (comment only, never approve or block) |
 | Fix agent | `pr-fix.md` | You comment `/fix <what to change>` on an agent PR | Push a commit to that PR and explain what it changed |
 
-Triage and the orchestrator do simple, rule-based work, so they use a smaller, cheaper model. The rest use Copilot's default model.
+Triage and the orchestrator do simple, rule-based work, so they use gh-aw's `small` model alias: the newest small model the Copilot account offers. The rest use Copilot's default model.
 
 **Tools:** every agent reads GitHub through the GitHub MCP server. The implementer and fix agents can edit files and run a short allow-list of commands (`cargo fmt`, `clippy`, `test`, `trunk build`). The front-end agent also drives a Playwright browser against a local dev server.
 
@@ -141,6 +145,8 @@ flowchart LR
 ```
 
 ## Using it day to day
+
+The [walkthrough](docs/walkthrough.md) shows each of these steps in GitHub.
 
 1. **Open an issue** describing one small change. Triage labels it, or asks questions; reply on the issue and triage looks again.
 2. **Add `needs-plan`.** Read the plan and the architect's verdict. To change the plan, comment, then remove and re-add `needs-plan`.
@@ -197,6 +203,8 @@ different kind of root cause, which is the first thing to work out when an agent
 | Front-end agent: "Refusing PR checkout" | Started from a run triggered by a merged PR, it tried to check out that already-merged PR | `checkout: pull-request: false` on the implementer agents | Configuration |
 | Orchestrator: "Ref … is not in allowed-refs" | Dispatches from a PR-triggered run default to that PR's branch | `target-ref: main` on the orchestrator's dispatch | Configuration |
 | Every agent failed with a 401 / "model catalog unavailable" | The `COPILOT_GITHUB_TOKEN` secret held an expired token | New token, `gh secret set COPILOT_GITHUB_TOKEN` | Credentials |
+| Cheaper agents failed with "400 The requested model is not supported" | `gpt-4.1-mini` wasn't in this account's Copilot model catalog | `model: small`, an alias resolved against the live catalog each run | Configuration |
+| Deploys went live without waiting for approval | The `github-pages` environment's required reviewer had been set but not saved (**Save protection rules**) | Re-added and saved; found while screenshotting the gate for the walkthrough | Configuration |
 | Re-running a failed run didn't pick up a merged fix | **Re-run** replays the workflow as it was at the original commit | Re-trigger the normal way (label, comment or merge) | Process |
 
 What helped most: reading the gh-aw job logs (the `agent` and `safe_outputs` jobs) and

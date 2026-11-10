@@ -55,6 +55,13 @@ safe-outputs:
     target: "*"
     allowed: [blocked]
     max: 1
+  # Clears the workflow's state labels once every stage is merged.
+  remove-labels:
+    target: "*"
+    allowed: [needs-triage, needs-plan, plan-review, plan-approved, in-progress, blocked]
+    issues: true
+    pull-requests: false
+    max: 1
 ---
 
 # Orchestrate the implementer agents
@@ -135,5 +142,13 @@ using this structure:
 Use one of these for each status: `Not needed`, `Waiting for stage 1`, `Dispatched`,
 `PR open`, `Merged`, `Blocked`. Base every status on what you actually found in the
 issue and its pull requests, never on what you expect.
+
+## Tidy up when everything is done
+
+When every stage the plan needs is **merged** (the "all stages are done" rules above),
+also remove the issue's workflow labels in one call (pass the issue number as
+`item_number`): any of `needs-triage`, `needs-plan`, `plan-review`, `plan-approved`,
+`in-progress` and `blocked` that are on it. Only remove labels the issue actually has.
+Leave every other label alone, and never remove labels while work is still in progress.
 
 Write in plain English with British spelling.

@@ -17,10 +17,9 @@ Velocity Calculator works out a team's velocity for an upcoming sprint, so it ca
 
 ## Project goal
 
-This repo has two goals:
+The primary goal of this repo is to **evaluate GitHub Agentic Workflows by implementing an end-to-end software development lifecycle (SDLC)**. Every change starts as an issue, an agent plans it, a human approves the plan, agents implement it, and nothing ships without passing CI, security gates and human review.
 
-1. **Rebuild Velocity Calculator in Rust**, as a browser-only WebAssembly app with feature parity with the original, written from scratch.
-2. **Build it entirely through GitHub Agentic Workflows.** Every change starts as an issue, an agent plans it, a human approves the plan, agents implement it, and nothing ships without passing CI, security gates and human review.
+The app is the small, real-world project used to exercise that process. **Velocity Calculator is intentionally simple**, with just enough architecture to split implementation work between backend (Rust/core) and front-end build agents. It is a browser-only WebAssembly app that rebuilds the original from scratch.
 
 It's also hands-on practice for the **GitHub GH-600: Agentic AI Developer** exam, so the setup deliberately covers each exam domain: planning before execution, tool and MCP scoping, memory and state, evaluation, multi-agent orchestration, and guardrails.
 

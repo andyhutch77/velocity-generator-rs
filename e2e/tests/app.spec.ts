@@ -26,6 +26,20 @@ test('shows the default average of 10', async ({ page }) => {
   await expect(page.locator('#average output')).toHaveText('10');
 });
 
+test('average value looks read-only, not like an input', async ({ page }) => {
+  const output = page.locator('#average output');
+  await expect(output).toHaveJSProperty('tagName', 'OUTPUT');
+  const styleOf = (selector: string) =>
+    page.locator(selector).first().evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { shadow: s.boxShadow, background: s.backgroundColor };
+    });
+  const value = await styleOf('#average output');
+  const input = await styleOf('input[type="text"], input[type="number"], input:not([type])');
+  expect(value.shadow).toBe('none');
+  expect(value.background).not.toBe(input.background);
+});
+
 test('average updates and rounds to two decimals', async ({ page }) => {
   await page.getByLabel('Sprint 1 velocity').fill('10');
   await page.getByLabel('Sprint 2 velocity').fill('11');

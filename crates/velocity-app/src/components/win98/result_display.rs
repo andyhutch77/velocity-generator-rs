@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 
-/// A sunken read-only readout with a label. An `Err` shows its message in text,
+/// A read-only value shown as plain text under a label. An `Err` shows its message in text,
 /// announced to assistive technology, instead of a value.
 #[component]
 pub fn ResultDisplay(

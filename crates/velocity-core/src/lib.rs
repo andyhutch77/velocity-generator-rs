@@ -373,6 +373,33 @@ mod tests {
     }
 
     #[test]
+    fn half_points_accepts_whole_and_half() {
+        for v in [0.0, 0.5, 1.0, 1.5, 2.0, 25.0] {
+            assert_eq!(check_half_points("points_carried_across", v), Ok(()));
+        }
+    }
+
+    #[test]
+    fn half_points_rejects_other_fractions() {
+        for v in [1.3, 0.25, 0.125, 2.75] {
+            assert_eq!(
+                check_half_points("points_carried_across", v),
+                Err(VelocityError::NotHalfPoints("points_carried_across"))
+            );
+        }
+    }
+
+    #[test]
+    fn half_points_rejects_negative_nan_and_infinite() {
+        for v in [-1.0, -0.5, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                check_half_points("points_carried_across", v),
+                Err(VelocityError::InvalidValue("points_carried_across"))
+            );
+        }
+    }
+
+    #[test]
     fn carried_two_gives_five_and_a_half() {
         check(&inputs(|i| i.points_carried_across = 2.0), 7.5, 5.5);
     }

@@ -114,6 +114,8 @@ pub enum VelocityError {
     InvalidValue(&'static str),
     /// A value is not a whole or half day; names the field.
     NotHalfDay(&'static str),
+    /// A value is not a whole or half point; names the field.
+    NotHalfPoints(&'static str),
     /// Days off are more than developers times productive days.
     DaysOffExceedCapacity,
     /// Capacity percent is above 100.
@@ -131,6 +133,12 @@ impl std::fmt::Display for VelocityError {
             }
             Self::NotHalfDay(field) => {
                 write!(f, "{field} must be a whole or half day, such as 1 or 1.5")
+            }
+            Self::NotHalfPoints(field) => {
+                write!(
+                    f,
+                    "{field} must be a whole or half number, such as 1 or 1.5"
+                )
             }
             Self::DaysOffExceedCapacity => {
                 write!(
@@ -169,19 +177,35 @@ pub fn check_half_days(field: &'static str, value: f64) -> Result<(), VelocityEr
     }
 }
 
+/// Checks that a value is a whole or half number of points (0, 0.5, 1, 1.5 and so on).
+///
+/// # Errors
+///
+/// Returns [`VelocityError::InvalidValue`] when the value is NaN, infinite or
+/// negative, and [`VelocityError::NotHalfPoints`] when it is not a multiple of 0.5.
+pub fn check_half_points(field: &'static str, value: f64) -> Result<(), VelocityError> {
+    check_value(field, value)?;
+    if (value * 2.0).fract() == 0.0 {
+        Ok(())
+    } else {
+        Err(VelocityError::NotHalfPoints(field))
+    }
+}
+
 impl VelocityInputs {
     /// Calculates the suggested story points for the next sprint.
     ///
     /// # Errors
     ///
-    /// Returns a [`VelocityError`] when a value is invalid, there is no
-    /// capacity, days off exceed capacity, or capacity is above 100%.
+    /// Returns a [`VelocityError`] when a value is invalid, points carried
+    /// across are not a whole or half number, there is no capacity, days off
+    /// exceed capacity, or capacity is above 100%.
     pub fn calculate(&self) -> Result<VelocityResult, VelocityError> {
         check_value("sprint1", self.previous.sprint1)?;
         check_value("sprint2", self.previous.sprint2)?;
         check_value("sprint3", self.previous.sprint3)?;
         check_value("days_off", self.days_off)?;
-        check_value("points_carried_across", self.points_carried_across)?;
+        check_half_points("points_carried_across", self.points_carried_across)?;
         check_value("capacity_percent", self.capacity_percent)?;
 
         let max = u64::from(self.developers) * u64::from(self.productive_days);
@@ -349,8 +373,79 @@ mod tests {
     }
 
     #[test]
-    fn new_points_round_after_subtracting() {
-        check(&inputs(|i| i.points_carried_across = 0.125), 7.5, 7.38);
+    fn half_points_accepts_whole_and_half() {
+        for v in [0.0, 0.5, 1.0, 1.5, 2.0, 25.0] {
+            assert_eq!(check_half_points("points_carried_across", v), Ok(()));
+        }
+    }
+
+    #[test]
+    fn half_points_rejects_other_fractions() {
+        for v in [1.3, 0.25, 0.125, 2.75] {
+            assert_eq!(
+                check_half_points("points_carried_across", v),
+                Err(VelocityError::NotHalfPoints("points_carried_across"))
+            );
+        }
+    }
+
+    #[test]
+    fn half_points_rejects_negative_nan_and_infinite() {
+        for v in [-1.0, -0.5, f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                check_half_points("points_carried_across", v),
+                Err(VelocityError::InvalidValue("points_carried_across"))
+            );
+        }
+    }
+
+    #[test]
+    fn carried_two_gives_five_and_a_half() {
+        check(&inputs(|i| i.points_carried_across = 2.0), 7.5, 5.5);
+    }
+
+    #[test]
+    fn carried_whole_and_half_values_are_accepted() {
+        for v in [0.0, 0.5, 1.0, 1.5, 2.0] {
+            assert!(inputs(|i| i.points_carried_across = v).calculate().is_ok());
+        }
+    }
+
+    #[test]
+    fn carried_non_half_values_are_rejected() {
+        for v in [1.3, 0.25, 0.125] {
+            assert_eq!(
+                inputs(|i| i.points_carried_across = v).calculate(),
+                Err(VelocityError::NotHalfPoints("points_carried_across"))
+            );
+        }
+    }
+
+    #[test]
+    fn carried_negative_nan_and_infinite_are_invalid() {
+        for v in [-1.0, f64::NAN, f64::INFINITY] {
+            assert_eq!(
+                inputs(|i| i.points_carried_across = v).calculate(),
+                Err(VelocityError::InvalidValue("points_carried_across"))
+            );
+        }
+    }
+
+    #[test]
+    fn carried_does_not_change_total() {
+        let base = VelocityInputs::default().calculate().expect("valid");
+        let carried = inputs(|i| i.points_carried_across = 2.0)
+            .calculate()
+            .expect("valid");
+        assert_close(carried.total_story_points, base.total_story_points);
+    }
+
+    #[test]
+    fn half_points_message_is_plain_english() {
+        assert_eq!(
+            VelocityError::NotHalfPoints("points_carried_across").to_string(),
+            "points_carried_across must be a whole or half number, such as 1 or 1.5"
+        );
     }
 
     #[test]
@@ -423,6 +518,7 @@ mod tests {
             VelocityError::NoCapacity,
             VelocityError::InvalidValue("days_off"),
             VelocityError::NotHalfDay("days_off"),
+            VelocityError::NotHalfPoints("points_carried_across"),
             VelocityError::DaysOffExceedCapacity,
             VelocityError::CapacityOutOfRange,
         ];

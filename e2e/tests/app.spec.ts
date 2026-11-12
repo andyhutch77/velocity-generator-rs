@@ -111,6 +111,35 @@ test('number of days off defaults to 25, sits below productive days and checks h
   await expect(daysOff).not.toHaveAttribute('aria-invalid', 'true');
 });
 
+test('points carried across defaults to 0, sits below days off and checks half numbers', async ({
+  page,
+}) => {
+  const carried = page.getByLabel('Points Carried Across');
+  await expect(carried).toHaveValue('0');
+  const daysOff = await page.getByLabel('Number Of Days off 🏖').boundingBox();
+  const field = await carried.boundingBox();
+  expect(field!.y).toBeGreaterThan(daysOff!.y);
+  for (const good of ['0', '0.5', '1', '1.5', '2']) {
+    await carried.fill(good);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+  }
+  for (const bad of ['', 'abc', '-1', 'NaN', 'inf', '1.3']) {
+    await carried.fill(bad);
+    await expect(page.getByRole('alert')).toContainText('! Points carried across');
+    await expect(carried).toHaveAttribute('aria-describedby', 'points-carried-error');
+    await expect(carried).toHaveAttribute('aria-invalid', 'true');
+  }
+  await carried.fill('1.5');
+  await expect(carried).not.toHaveAttribute('aria-invalid', 'true');
+});
+
+test('points carried across changes the new story points', async ({ page }) => {
+  const output = page.locator('#new-points output');
+  await expect(output).toHaveText('7.5');
+  await page.getByLabel('Points Carried Across').fill('2');
+  await expect(output).toHaveText('5.5');
+});
+
 test('keyboard reaches the days off input with a visible focus outline', async ({ page }) => {
   for (let i = 0; i < 6; i++) {
     await page.keyboard.press('Tab');

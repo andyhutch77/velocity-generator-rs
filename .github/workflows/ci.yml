@@ -100,7 +100,7 @@ jobs:
         run: npx playwright test
 
       # On failure, keep the HTML report (with traces and screenshots) for 14 days.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report

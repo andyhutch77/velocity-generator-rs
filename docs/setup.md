@@ -120,7 +120,8 @@ dependency review can see version changes.
 
 1. **Settings → Pages:** source **GitHub Actions**.
 2. **Settings → Environments → `github-pages`:**
-   - **Required reviewers:** the maintainer, so every deploy waits for approval;
+   - **Required reviewers:** the maintainer, so every deploy waits for approval (the
+     `Settings check` workflow fails if this is missing or unsaved);
    - **Prevent self-review:** off, or you can't approve your own deploys;
    - **Deployment branches and tags:** `main` only.
 

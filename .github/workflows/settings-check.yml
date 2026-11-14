@@ -1,0 +1,44 @@
+name: Settings check
+
+# Fails when repo settings that can't live in code have drifted or were never saved.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  settings:
+    name: Verify protection settings
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: github-pages environment requires a reviewer
+        run: |
+          count=$(gh api "repos/$REPO/environments/github-pages" \
+            --jq '[.protection_rules[] | select(.type == "required_reviewers" and (.reviewers | length > 0))] | length')
+          if [ "$count" -eq 0 ]; then
+            echo "::error::The github-pages environment has no required reviewers (Settings -> Environments -> github-pages)."
+            exit 1
+          fi
+
+      - name: main is covered by an enforced ruleset
+        run: |
+          # This endpoint returns only active rules (org-level included),
+          # so a ruleset left in evaluate mode counts as missing.
+          types=$(gh api "repos/$REPO/rules/branches/main" --jq '[.[].type] | unique | join(" ")')
+          echo "Enforced rules on main: $types"
+          missing=0
+          for t in pull_request non_fast_forward required_status_checks; do
+            case " $types " in
+              *" $t "*) ;;
+              *) echo "::error::No enforced '$t' rule on main (is the ruleset in evaluate mode?)."; missing=1 ;;
+            esac
+          done
+          exit $missing
